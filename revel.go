@@ -2,6 +2,8 @@ package revel
 
 import (
 	"fmt"
+	stdlog "log"
+	"runtime"
 	"strings"
 
 	"github.com/revel/revel"
@@ -18,21 +20,47 @@ func NewLogger() loggers.Contextual {
 	var l *Logger
 	var a = mappers.NewContextualMap(l)
 	a.Info("Now using Revel's logger package (via loggers/mappers/revel).")
+
+	// Remove filename printing from revel logger.
+	revel.TRACE.SetFlags(stdlog.Ldate | stdlog.Ltime)
+	revel.INFO.SetFlags(stdlog.Ldate | stdlog.Ltime)
+	revel.WARN.SetFlags(stdlog.Ldate | stdlog.Ltime)
+	revel.ERROR.SetFlags(stdlog.Ldate | stdlog.Ltime)
 	return a
 }
 
 // LevelPrint is a Mapper method
 func (l *Logger) LevelPrint(lev mappers.Level, i ...interface{}) {
+	_, file, line, ok := runtime.Caller(3)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+	pf := fmt.Sprintf("%s:%d: ", shortenFile(file), line)
+	i = append([]interface{}{pf}, i...)
 	getRevelLevel(lev).Print(i...)
 }
 
 // LevelPrintf is a Mapper method
 func (l *Logger) LevelPrintf(lev mappers.Level, format string, i ...interface{}) {
-	getRevelLevel(lev).Printf(format, i...)
+	_, file, line, ok := runtime.Caller(3)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+	pf := fmt.Sprintf("%s:%d: ", shortenFile(file), line)
+	getRevelLevel(lev).Printf(pf+format, i...)
 }
 
 // LevelPrintln is a Mapper method
 func (l *Logger) LevelPrintln(lev mappers.Level, i ...interface{}) {
+	_, file, line, ok := runtime.Caller(3)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+	pf := fmt.Sprintf("%s:%d:", shortenFile(file), line)
+	i = append([]interface{}{pf}, i...)
 	getRevelLevel(lev).Println(i...)
 }
 
@@ -93,4 +121,21 @@ func getRevelLevel(lev mappers.Level) loggers.Standard {
 	default:
 		panic("unreachable")
 	}
+}
+
+// shortenFile returns the folder and file name of an absolute file path.
+func shortenFile(file string) string {
+	short := file
+	foundOne := false
+	for i := len(file) - 1; i > 0; i-- {
+		if file[i] == '/' {
+			if !foundOne {
+				foundOne = true
+				continue
+			}
+			short = file[i+1:]
+			break
+		}
+	}
+	return short
 }
