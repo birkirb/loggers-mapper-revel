@@ -2,8 +2,10 @@ package revel
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -107,8 +109,9 @@ func TestStackTrace(t *testing.T) {
 	EnableTrace(mappers.LevelError)
 	defer DisableTrace(mappers.LevelError)
 	l.Error("an error")
+	_, file, line, _ := runtime.Caller(0)
 
-	mustContain := "runtime/debug.Stack"
+	mustContain := fmt.Sprintf("%s:%d", file, line-1)
 	actual := b.String()
 	if ok := strings.Contains(actual, mustContain); !ok {
 		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
@@ -120,8 +123,9 @@ func TestStackTraceF(t *testing.T) {
 	EnableTrace(mappers.LevelError)
 	defer DisableTrace(mappers.LevelError)
 	l.Errorf("an error: %s", "value")
+	_, file, line, _ := runtime.Caller(0)
 
-	mustContain := "runtime/debug.Stack"
+	mustContain := fmt.Sprintf("%s:%d", file, line-1)
 	actual := b.String()
 	if ok := strings.Contains(actual, mustContain); !ok {
 		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
@@ -133,8 +137,9 @@ func TestStackTraceLn(t *testing.T) {
 	EnableTrace(mappers.LevelError)
 	defer DisableTrace(mappers.LevelError)
 	l.Errorln("an error")
+	_, file, line, _ := runtime.Caller(0)
 
-	mustContain := "runtime/debug.Stack"
+	mustContain := fmt.Sprintf("%s:%d", file, line-1)
 	actual := b.String()
 	if ok := strings.Contains(actual, mustContain); !ok {
 		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
