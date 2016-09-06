@@ -4,6 +4,7 @@ import (
 	"fmt"
 	stdlog "log"
 	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"github.com/revel/revel"
@@ -38,6 +39,9 @@ func (l *Logger) LevelPrint(lev mappers.Level, i ...interface{}) {
 	}
 	pf := fmt.Sprintf("%s:%d: ", shortenFile(file), line)
 	i = append([]interface{}{pf}, i...)
+	if t := trace(lev); t != "" {
+		i = append(i, "\n", t)
+	}
 	getRevelLevel(lev).Print(i...)
 }
 
@@ -49,6 +53,9 @@ func (l *Logger) LevelPrintf(lev mappers.Level, format string, i ...interface{})
 		line = 0
 	}
 	pf := fmt.Sprintf("%s:%d: ", shortenFile(file), line)
+	if t := trace(lev); t != "" {
+		i = append(i, "\n", t)
+	}
 	getRevelLevel(lev).Printf(pf+format, i...)
 }
 
@@ -61,6 +68,9 @@ func (l *Logger) LevelPrintln(lev mappers.Level, i ...interface{}) {
 	}
 	pf := fmt.Sprintf("%s:%d:", shortenFile(file), line)
 	i = append([]interface{}{pf}, i...)
+	if t := trace(lev); t != "" {
+		i = append(i, "\n", t)
+	}
 	getRevelLevel(lev).Println(i...)
 }
 
@@ -138,4 +148,34 @@ func shortenFile(file string) string {
 		}
 	}
 	return short
+}
+
+// stackTrace is a bit set for enabling stack traces.
+var stackTrace int
+
+// EnableTrace will enable stacktrace printing for the specified levels.
+// Should be set before usage.
+// Other levels are not affected.
+func EnableTrace(lev ...mappers.Level) {
+	for _, l := range lev {
+		stackTrace |= 1 << uint(l)
+	}
+}
+
+// DisableTrace will disable stacktrace printing for the specified levels.
+// Should be set before usage.
+// Other levels are not affected.
+func DisableTrace(lev ...mappers.Level) {
+	for _, l := range lev {
+		stackTrace &= ^(1 << uint(l))
+	}
+}
+
+// trace returns a stack trace if enabled for the level.
+// Otherwise an empty string is returned.
+func trace(lev mappers.Level) string {
+	if stackTrace&(1<<uint(lev)) == 0 {
+		return ""
+	}
+	return string(debug.Stack())
 }

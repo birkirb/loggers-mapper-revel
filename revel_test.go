@@ -9,6 +9,7 @@ import (
 
 	"github.com/revel/revel"
 	"gopkg.in/birkirb/loggers.v1"
+	"gopkg.in/birkirb/loggers.v1/mappers"
 )
 
 func TestRevelInterface(t *testing.T) {
@@ -99,4 +100,43 @@ func newBufferedRevelLog() (loggers.Contextual, *bytes.Buffer) {
 	revel.WARN = log.New(bb, "WARN  ", log.Ldate|log.Ltime|log.Lshortfile)
 	revel.ERROR = log.New(bb, "ERROR ", log.Ldate|log.Ltime|log.Lshortfile)
 	return NewLogger(), bb
+}
+
+func TestStackTrace(t *testing.T) {
+	l, b := newBufferedRevelLog()
+	EnableTrace(mappers.LevelError)
+	defer DisableTrace(mappers.LevelError)
+	l.Error("an error")
+
+	mustContain := "runtime/debug.Stack"
+	actual := b.String()
+	if ok := strings.Contains(actual, mustContain); !ok {
+		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
+	}
+}
+
+func TestStackTraceF(t *testing.T) {
+	l, b := newBufferedRevelLog()
+	EnableTrace(mappers.LevelError)
+	defer DisableTrace(mappers.LevelError)
+	l.Errorf("an error: %s", "value")
+
+	mustContain := "runtime/debug.Stack"
+	actual := b.String()
+	if ok := strings.Contains(actual, mustContain); !ok {
+		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
+	}
+}
+
+func TestStackTraceLn(t *testing.T) {
+	l, b := newBufferedRevelLog()
+	EnableTrace(mappers.LevelError)
+	defer DisableTrace(mappers.LevelError)
+	l.Errorln("an error")
+
+	mustContain := "runtime/debug.Stack"
+	actual := b.String()
+	if ok := strings.Contains(actual, mustContain); !ok {
+		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
+	}
 }
