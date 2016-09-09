@@ -2,13 +2,17 @@ package revel
 
 import (
 	"bytes"
-	"log"
+	"fmt"
+	stdlog "log"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/revel/revel"
 	"gopkg.in/birkirb/loggers.v1"
+	"gopkg.in/birkirb/loggers.v1/log"
 )
 
 func TestRevelInterface(t *testing.T) {
@@ -94,9 +98,48 @@ func newBufferedRevelLog() (loggers.Contextual, *bytes.Buffer) {
 	var bb = bytes.NewBuffer(b)
 
 	// Loggers
-	revel.TRACE = log.New(bb, "TRACE ", log.Ldate|log.Ltime|log.Lshortfile)
-	revel.INFO = log.New(bb, "INFO  ", log.Ldate|log.Ltime|log.Lshortfile)
-	revel.WARN = log.New(bb, "WARN  ", log.Ldate|log.Ltime|log.Lshortfile)
-	revel.ERROR = log.New(bb, "ERROR ", log.Ldate|log.Ltime|log.Lshortfile)
+	revel.TRACE = stdlog.New(bb, "TRACE ", stdlog.Ldate|stdlog.Ltime)
+	revel.INFO = stdlog.New(bb, "INFO  ", stdlog.Ldate|stdlog.Ltime)
+	revel.WARN = stdlog.New(bb, "WARN  ", stdlog.Ldate|stdlog.Ltime)
+	revel.ERROR = stdlog.New(bb, "ERROR ", stdlog.Ldate|stdlog.Ltime)
 	return NewLogger(), bb
+}
+
+func TestBackTrace(t *testing.T) {
+	l, b := newBufferedRevelLog()
+	log.Logger = l
+	log.Error("an error")
+	_, file, line, _ := runtime.Caller(0)
+
+	mustContain := fmt.Sprintf("%s:%d", filepath.Base(file), line-1)
+	actual := b.String()
+	if ok := strings.Contains(actual, mustContain); !ok {
+		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
+	}
+}
+
+func TestBackTraceF(t *testing.T) {
+	l, b := newBufferedRevelLog()
+	log.Logger = l
+	log.Errorf("an error: %s", "value")
+	_, file, line, _ := runtime.Caller(0)
+
+	mustContain := fmt.Sprintf("%s:%d", filepath.Base(file), line-1)
+	actual := b.String()
+	if ok := strings.Contains(actual, mustContain); !ok {
+		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
+	}
+}
+
+func TestBackTraceLn(t *testing.T) {
+	l, b := newBufferedRevelLog()
+	log.Logger = l
+	log.Errorln("an error")
+	_, file, line, _ := runtime.Caller(0)
+
+	mustContain := fmt.Sprintf("%s:%d", filepath.Base(file), line-1)
+	actual := b.String()
+	if ok := strings.Contains(actual, mustContain); !ok {
+		t.Errorf("Log output mismatch %s (actual) != %s (expected)", actual, mustContain)
+	}
 }
