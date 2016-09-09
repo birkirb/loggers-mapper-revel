@@ -32,13 +32,7 @@ func NewLogger() loggers.Contextual {
 
 // LevelPrint is a Mapper method
 func (l *Logger) LevelPrint(lev mappers.Level, i ...interface{}) {
-	_, file, line, ok := runtime.Caller(3)
-	if !ok {
-		file = "???"
-		line = 0
-	}
-	pf := fmt.Sprintf("%s:%d: ", shortenFile(file), line)
-	i = append([]interface{}{pf}, i...)
+	i = append([]interface{}{caller(3)+" "}, i...)
 	if t := trace(lev); t != "" {
 		i = append(i, "\n", t)
 	}
@@ -47,27 +41,15 @@ func (l *Logger) LevelPrint(lev mappers.Level, i ...interface{}) {
 
 // LevelPrintf is a Mapper method
 func (l *Logger) LevelPrintf(lev mappers.Level, format string, i ...interface{}) {
-	_, file, line, ok := runtime.Caller(3)
-	if !ok {
-		file = "???"
-		line = 0
-	}
-	pf := fmt.Sprintf("%s:%d: ", shortenFile(file), line)
 	if t := trace(lev); t != "" {
 		i = append(i, "\n", t)
 	}
-	getRevelLevel(lev).Printf(pf+format, i...)
+	getRevelLevel(lev).Printf(caller(3)+" "+format, i...)
 }
 
 // LevelPrintln is a Mapper method
 func (l *Logger) LevelPrintln(lev mappers.Level, i ...interface{}) {
-	_, file, line, ok := runtime.Caller(3)
-	if !ok {
-		file = "???"
-		line = 0
-	}
-	pf := fmt.Sprintf("%s:%d:", shortenFile(file), line)
-	i = append([]interface{}{pf}, i...)
+	i = append([]interface{}{caller(3)}, i...)
 	if t := trace(lev); t != "" {
 		i = append(i, "\n", t)
 	}
@@ -178,4 +160,15 @@ func trace(lev mappers.Level) string {
 		return ""
 	}
 	return string(debug.Stack())
+}
+
+// caller returns the funtion call line at the specified depth
+// as "dir/file.go:n:
+func caller(depth int) string {
+	_, file, line, ok := runtime.Caller(depth+1)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+	return fmt.Sprintf("%s:%d:", shortenFile(file), line)
 }
