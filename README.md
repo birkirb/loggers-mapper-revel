@@ -4,7 +4,7 @@ Golang [Loggers](https://gopkg.in/birkirb/loggers.v1) mapper for [Revel](https:/
 [![GoDoc](https://godoc.org/github.com/birkirb/loggers-mapper-revel?status.svg)](https://godoc.org/github.com/birkirb/loggers-mapper-revel)
 [![Build Status](https://travis-ci.org/birkirb/loggers-mapper-revel.svg?branch=master)](http://travis-ci.org/birkirb/loggers-mapper-revel)
 
-## Pre-recquisite
+## Prerequisite
 
 See https://gopkg.in/birkirb/loggers.v1
 
